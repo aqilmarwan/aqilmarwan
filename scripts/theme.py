@@ -1,14 +1,19 @@
 """Design tokens. Every colour, size and spacing value in the renderer comes from
 here - render.py must not contain a literal hex code or a bare pixel number.
 
-The intensity ramps were generated in OKLCH with exactly-even lightness steps and
-verified with the dataviz validator in both modes:
+The ramp uses GitHub's contribution-green tone (OKLCH hue ~148) but re-spaced:
+GitHub's own steps jump unevenly in lightness (dL 0.14 / 0.10 / 0.15), this one
+is exactly even. Verified with the dataviz validator in both modes:
 
-  ramps  (--ordinal)   monotone L, adjacent dL >= 0.06, light end >= 2:1 vs surface
-  accent (--pairs all) CVD dE 28.5 protan / 28.1 deutan against the ramp mid
+  ramp   (--ordinal)   monotone L, adjacent dL >= 0.06, light end >= 2:1 vs surface
+  accent (--pairs all) CVD dE 24.3 deutan / 13.7 tritan against the ramp mid
 
 Even dL is what makes the ramp survive deuteranopia: the steps stay ordered by
 lightness alone, so hue is never load-bearing.
+
+The accent is VIOLET, not amber. Beside a green ramp an amber or red accent is
+the textbook deuteranopia collision - red-orange measured dE 3.7 against the
+ramp mid, far under the 8 floor. Violet clears it at 24.3.
 """
 
 # --------------------------------------------------------------------------
@@ -22,8 +27,8 @@ LIGHT = {
     "ink":         "#211f27",
     "ink_soft":    "#6a676f",
     "ink_muted":   "#8d8b91",
-    "accent":      "#cc7200",   # amber - peak markers ONLY, nowhere else
-    "ramp": ["#bda3ff", "#b47afd", "#a55edb", "#9541b9", "#842298"],
+    "accent":      "#8e57d8",   # violet - peak marker ONLY, nowhere else
+    "ramp": ["#46ca5b", "#18b044", "#00943a", "#007935", "#005f2d"],
 }
 
 DARK = {
@@ -33,8 +38,8 @@ DARK = {
     "ink":         "#f7f6f9",
     "ink_soft":    "#b8b6bd",
     "ink_muted":   "#87858c",
-    "accent":      "#d47a00",
-    "ramp": ["#5926a2", "#7e44bf", "#a762dc", "#d17ff7", "#f3a8ff"],
+    "accent":      "#a06ce8",
+    "ramp": ["#005215", "#007327", "#00963b", "#00ba56", "#26df77"],
 }
 
 THEMES = {"light": LIGHT, "dark": DARK}
@@ -42,8 +47,8 @@ THEMES = {"light": LIGHT, "dark": DARK}
 # OKLCH lightness of each ramp step, kept for documentation and for the
 # self-check in tests. Even spacing is the accessibility mechanism.
 RAMP_L = {
-    "light": [0.772, 0.694, 0.616, 0.538, 0.461],
-    "dark":  [0.416, 0.520, 0.625, 0.729, 0.834],
+    "light": [0.742, 0.662, 0.583, 0.503, 0.424],
+    "dark":  [0.380, 0.483, 0.587, 0.690, 0.794],
 }
 
 # --------------------------------------------------------------------------
