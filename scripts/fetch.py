@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GitHub GraphQL -> data/contributions.json (+ history.json, hour-cache.json).
+"""GitHub GraphQL -> data/contributions.json (+ history, commit-density cache).
 
 Standard library only. No third-party stat services - every number here comes
 from GitHub's own API.
@@ -8,7 +8,7 @@ Design notes
 ------------
 * Nothing under data/ is written until every request has succeeded, so a failed
   run leaves yesterday's good snapshot (and yesterday's SVGs) in place.
-* Repository names are never persisted. The hour cache is keyed by a salted
+* Repository names are never persisted. The density cache is keyed by a salted
   hash of the repo's node id, so a public profile repo never leaks the name of
   a private repo.
 * Output is written with sorted keys and rounded floats so that unchanged input
@@ -39,6 +39,10 @@ MAX_HOUR_REPOS = 25          # rate-limit budget for commit-timestamp sampling
 HISTORY_LOOKBACK_DAYS = 365
 BATCH = 4                    # repos per batched history query
 USER_AGENT = "gh-stats (github.com/aqilmarwan) contribution renderer"
+
+# Bump when the cache layout changes; a mismatch rebuilds from scratch rather
+# than silently mixing incompatible buckets.
+CACHE_VERSION = 2
 
 
 class FetchError(RuntimeError):
@@ -272,28 +276,55 @@ def derive(days: list[dict]) -> dict:
     }
 
 
-def hour_stats(hours: list[int]) -> dict:
+def density_stats(matrix: list[list[int]]) -> dict:
+    """matrix[weekday][hour], weekday 0 = Sunday to match the GitHub calendar."""
+    hours = [sum(matrix[wd][h] for wd in range(7)) for h in range(24)]
+    weekdays = [sum(row) for row in matrix]
     total = sum(hours)
-    peak = max(range(24), key=lambda h: hours[h]) if total else None
-    # busiest contiguous 4-hour block, wrapping midnight
+
+    peak_hour = max(range(24), key=lambda h: hours[h]) if total else None
+    peak_weekday = max(range(7), key=lambda wd: weekdays[wd]) if total else None
+
+    # the single busiest weekday/hour intersection - the thing a joint
+    # distribution can show that two separate marginals cannot
+    peak_cell = None
+    if total:
+        wd, h = max(((w, x) for w in range(7) for x in range(24)),
+                    key=lambda c: matrix[c[0]][c[1]])
+        peak_cell = {"weekday": wd, "hour": h, "count": matrix[wd][h]}
+
     block = None
     if total:
         best = max(range(24), key=lambda s: sum(hours[(s + k) % 24] for k in range(4)))
         block = {"start": best, "end": (best + 4) % 24,
                  "count": sum(hours[(best + k) % 24] for k in range(4))}
-    return {"histogram": hours, "total": total, "peak_hour": peak, "peak_block": block}
+
+    return {
+        "matrix": matrix,
+        "histogram": hours,
+        "weekday_totals": weekdays,
+        "total": total,
+        "peak_hour": peak_hour,
+        "peak_weekday": peak_weekday,
+        "peak_cell": peak_cell,
+        "peak_block": block,
+    }
 
 
 # ---------------------------------------------------------------------------
 # stages
 # ---------------------------------------------------------------------------
 
-def collect_hour_data(client: Client, viewer_id: str, repos: list[dict],
-                      cache: dict, tz: ZoneInfo, now: datetime) -> tuple[dict, dict]:
-    """Incrementally pull commit timestamps, bucketed by local month+hour.
+def collect_commit_density(client: Client, viewer_id: str, repos: list[dict],
+                           cache: dict, tz: ZoneInfo,
+                           now: datetime) -> tuple[list[list[int]], dict]:
+    """Incrementally pull commit timestamps into a weekday x hour density.
 
-    The cache stores per-repo {watermark, months:{'YYYY-MM': [24]}} so each run
-    only asks for commits newer than the last one it saw.
+    The cache stores per-repo {watermark, months:{'YYYY-MM': {'wd,h': n}}} so
+    each run only asks for commits newer than the last one it banked. The
+    month buckets are sparse dicts because most of the 168 cells are empty,
+    and they keep the trailing-year window computable without storing raw
+    commits.
     """
     floor = iso_z(now - timedelta(days=HISTORY_LOOKBACK_DAYS + 35))
     pending = []
@@ -335,8 +366,11 @@ def collect_hour_data(client: Client, viewer_id: str, repos: list[dict],
                 stamp = node["committedDate"]
                 local = datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ") \
                     .replace(tzinfo=timezone.utc).astimezone(tz)
-                bucket = months.setdefault(local.strftime("%Y-%m"), [0] * 24)
-                bucket[local.hour] += 1
+                bucket = months.setdefault(local.strftime("%Y-%m"), {})
+                # isoweekday(): Mon=1..Sun=7 -> GitHub's Sun=0..Sat=6
+                wd = local.isoweekday() % 7
+                cell = f"{wd},{local.hour}"
+                bucket[cell] = bucket.get(cell, 0) + 1
                 scanned += 1
                 if stamp > newest[p["key"]]:
                     newest[p["key"]] = stamp
@@ -350,14 +384,16 @@ def collect_hour_data(client: Client, viewer_id: str, repos: list[dict],
 
     # window the cached months down to the trailing year
     cutoff = (now.astimezone(tz) - timedelta(days=HISTORY_LOOKBACK_DAYS)).strftime("%Y-%m")
-    hours = [0] * 24
+    matrix = [[0] * 24 for _ in range(7)]
     for entry in cache.values():
-        for month, vec in entry["months"].items():
-            if month >= cutoff:
-                for h in range(24):
-                    hours[h] += vec[h]
+        for month, cells in entry["months"].items():
+            if month < cutoff:
+                continue
+            for cell, count in cells.items():
+                wd, hour = cell.split(",")
+                matrix[int(wd)][int(hour)] += count
 
-    return hours, {"repos_sampled": len(repos), "commits_scanned": scanned}
+    return matrix, {"repos_sampled": len(repos), "commits_scanned": scanned}
 
 
 def main() -> int:
@@ -427,11 +463,17 @@ def main() -> int:
     selected = repos[:MAX_HOUR_REPOS]
     print(f"   {len(repos)} candidates, sampling {len(selected)}")
 
-    cache_path = DATA / "hour-cache.json"
-    cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    cache_path = DATA / "commit-density-cache.json"
+    stored = json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    if stored.get("version") != CACHE_VERSION:
+        if stored:
+            print(f"   cache schema changed -> rebuilding from scratch")
+        stored = {"version": CACHE_VERSION, "repos": {}}
+    cache = stored["repos"]
 
     print("-> commit timestamps")
-    hours, sampling = collect_hour_data(client, viewer_id, selected, cache, tz, now)
+    matrix, sampling = collect_commit_density(client, viewer_id, selected,
+                                              cache, tz, now)
     print(f"   {sampling['commits_scanned']} new commits across "
           f"{sampling['repos_sampled']} repos")
 
@@ -469,7 +511,7 @@ def main() -> int:
         "window": {"days": days},
         "metrics": metrics,
         "composition": typed,
-        "hours": hour_stats(hours),
+        "density": density_stats(matrix),
         "sampling": {**sampling, "repos_available": len(repos),
                      "complete": len(selected) >= len(repos)},
         "per_year": per_year,
@@ -496,7 +538,7 @@ def main() -> int:
 
     for path, obj in ((DATA / "contributions.json", snapshot),
                       (history_path, history),
-                      (cache_path, cache)):
+                      (cache_path, stored)):
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(json.dumps(obj, indent=2, sort_keys=True) + "\n")
         tmp.replace(path)
