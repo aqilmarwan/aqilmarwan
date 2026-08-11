@@ -1,0 +1,60 @@
+name: update contribution graph
+
+on:
+  schedule:
+    # 16:20 UTC = 00:20 Asia/Kuala_Lumpur, so the graph refreshes just after
+    # local midnight with the previous day complete. Cron here is always UTC.
+    - cron: "20 16 * * *"
+  workflow_dispatch:
+
+# Overlapping runs would race the same commit on main.
+concurrency:
+  group: update-contribution-graph
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Push with the PAT rather than GITHUB_TOKEN. Pushes made with the
+          # default token do not count as repository activity, so the 60-day
+          # scheduled-workflow timer would keep ticking. See SETUP.md.
+          token: ${{ secrets.GH_STATS_TOKEN }}
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          # No cache key: the pipeline is standard library only, so there are
+          # no dependencies to restore.
+
+      - name: Fetch contribution data
+        env:
+          GH_STATS_TOKEN: ${{ secrets.GH_STATS_TOKEN }}
+        # fetch.py retries 5xx and secondary rate limits with exponential
+        # backoff, and writes data/ only after every request has succeeded.
+        # A failure here stops the job with yesterday's assets still in place.
+        run: python scripts/fetch.py
+
+      - name: Render SVGs
+        run: python scripts/render.py
+
+      - name: Commit if changed
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain -- data assets README.md)" ]; then
+            echo "No change in data or assets - nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data assets README.md
+          git commit -m "chore: update contribution graph ($(date -u +%Y-%m-%d)) [skip ci]"
+          git push
