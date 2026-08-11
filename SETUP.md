@@ -270,9 +270,18 @@ snapshot.
 
 ---
 
-## 8. Moving this into your profile repository
+## 8. This is the profile repository
 
-The graphic renders on your profile when it lives in the special repository
-named after your account (`aqilmarwan/aqilmarwan`) with the `<picture>` block in
-its `README.md`. Copy the whole tree in, add the `GH_STATS_TOKEN` secret, and
-run the workflow once manually to confirm it goes green.
+This repository is named after the account (`aqilmarwan/aqilmarwan`), which is
+what makes its `README.md` render on the profile page. Two things that must
+stay true for the graphic to show up:
+
+- **The repository has to be public.** A profile README in a private repository
+  renders for nobody, including you when signed out.
+- **The embed uses relative paths** (`./assets/contributions-light.svg`). That
+  works because the SVGs live in this same repository. Moving them elsewhere
+  means absolute `raw.githubusercontent.com` URLs and a public host repo.
+
+Nothing in `data/` carries a repository name - the density cache is keyed by a
+salted SHA-256 of each repository's node id - so making this public does not
+disclose what the private repositories are called.
