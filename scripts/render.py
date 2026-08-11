@@ -156,15 +156,13 @@ def build_density(d, c) -> str:
                f'x2="{f(T.DENSITY_X + T.DENSITY_W)}" y2="{f(base)}" '
                f'class="rule"/>')
 
-    # the single busiest day, in the accent that appears nowhere else
+    # The busiest day still gets a marker, but no value label - the dot says
+    # "this is the high point" without putting a number on the graphic.
     if counts[peak_i]:
         px = T.DENSITY_X + peak_i * step + max(step - T.BAR_GAP, T.BAR_MIN) / 2
         py = y_of(counts[peak_i])
         out.append(f'<circle cx="{f(px)}" cy="{f(py - 8)}" '
                    f'r="{T.PEAK_DOT_R}" fill="{c["accent"]}"/>')
-        anchor = "end" if peak_i > len(counts) * 0.85 else "middle"
-        out.append(text(px, py - 16, f"{counts[peak_i]}", "cap-accent",
-                        anchor=anchor))
 
     # month ticks, one per calendar month start
     for i, day in enumerate(days):
@@ -239,8 +237,6 @@ def stylesheet(c) -> str:
         f"letter-spacing:{ty['label']['tracking']}px;fill:{c['ink_muted']}}}"
         f".n{{font-family:{T.MONO};font-size:{ty['label']['size']}px;"
         f"font-variant-numeric:tabular-nums;fill:{c['ink_soft']}}}"
-        f".cap-accent{{font-family:{T.MONO};font-size:{ty['label']['size']}px;"
-        f"font-weight:600;font-variant-numeric:tabular-nums;fill:{c['accent']}}}"
         f".rule{{stroke:{c['hairline']};stroke-width:{T.STROKE_HAIRLINE}}}"
     )
 
