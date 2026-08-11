@@ -13,7 +13,7 @@ scripts/make_fixture.py              regenerates the offline test fixture
 scripts/check.py                     determinism / a11y / palette assertions
 data/contributions.json              latest normalized snapshot (committed)
 data/history.json                    append-only daily rollups (committed)
-data/hour-cache.json                 incremental commit-hour cache (committed)
+data/commit-density-cache.json       incremental weekday x hour cache (committed)
 fixtures/sample.json                 deliberately messy sample data
 assets/contributions-{light,dark}.svg
 ```
@@ -68,9 +68,9 @@ Turning this on makes the type breakdown (commits / PRs / issues / reviews)
 reflect your real totals. Note that it also surfaces that activity on your
 public profile page - that is the trade.
 
-Hour-of-day data does **not** depend on this setting. Those timestamps come from
-enumerating repositories directly with the `repo` scope, so the hour field is
-accurate either way.
+The weekday x hour density does **not** depend on this setting. Those timestamps
+come from enumerating repositories directly with the `repo` scope, so the
+ridgeline is accurate either way.
 
 ---
 
@@ -105,10 +105,15 @@ contribution year, and one for the preceding 365 days (year-over-year compares
 trailing-365 against the prior 365; comparing calendar years would pit a
 part-finished year against a whole one).
 
-**Hour-of-day is the hard part.** The contribution calendar carries no
-timestamps, so commit hours come from
+**The weekday x hour density is the hard part.** The contribution calendar
+carries no timestamps, so commit times come from
 `repository.defaultBranchRef.target.history(author: …)`, reading `committedDate`
-off each commit and converting to `Asia/Kuala_Lumpur`.
+off each commit and converting to `Asia/Kuala_Lumpur`. Each commit lands in one
+of 168 (weekday, hour) buckets.
+
+Note this makes the density a count of **commits**, not of all contributions -
+a different and smaller number than the 365-day contribution total in the stats
+strip. The footer states the exact sample size.
 
 That is rate-limit sensitive, so:
 
@@ -116,12 +121,15 @@ That is rate-limit sensitive, so:
   window then by most recent push
 - queries are batched four repositories per request, each with its **own**
   `since` cutoff
-- results are cached in `data/hour-cache.json` as per-repo, per-month
-  24-bucket histograms, so each run only asks for commits newer than the last
-  one it banked - a warm run scans zero commits
+- results are cached in `data/commit-density-cache.json` as per-repo,
+  per-month sparse `{"weekday,hour": count}` maps, so each run only asks for
+  commits newer than the last one it banked - a warm run scans zero commits.
+  The cache carries a `version`; bumping it rebuilds from scratch rather than
+  mixing incompatible buckets
 - the remaining rate limit is logged every run
 - when coverage is partial the SVG footer says so explicitly
-  ("hours sampled from the 25 most active of 49 repositories")
+  ("density from 711 commit timestamps across the 25 most active of 50
+  repositories")
 
 Repository **names are never written to `data/`**. The cache is keyed by a
 salted SHA-256 of the repository node id, so a public profile repo cannot leak
@@ -139,15 +147,25 @@ slightly fewer. You are nowhere near the ceiling.
 `theme.py` holds every colour, size and spacing value; `render.py` contains no
 literal hex codes or bare pixel numbers.
 
-The five-step intensity ramp is generated in **OKLCH with exactly even lightness
-steps** (ΔL ≈ 0.078 light, ≈ 0.105 dark) and converted to sRGB. Even lightness
-spacing is what makes it survive deuteranopia - the steps stay ordered by
-lightness alone, so hue never carries the meaning. `make check` re-verifies this
-from the hex values rather than taking it on trust.
+Two ramps, both generated in **OKLCH with exactly even lightness steps** and
+converted to sRGB:
 
-The amber accent appears in exactly one place: the peak hour column. It sits
-≥ 8 OKLab ΔE from every ramp step (measured at 28+), so it can never be
-mistaken for an intensity level.
+- **`ramp`** - 5 steps, used for momentum and composition
+- **`ridge`** - 7 steps, one per weekday. Weekday is an *ordered* category
+  (Mon → Sun), so it takes an ordinal ramp rather than categorical hues.
+
+Even lightness spacing is what makes both survive deuteranopia - the steps stay
+ordered by lightness alone, so hue never carries the meaning. `make check`
+re-verifies this from the hex values rather than taking it on trust.
+
+The amber accent appears in exactly one place: the marker on the densest
+(weekday, hour) cell. It sits ≥ 8 OKLab ΔE from every step of both ramps
+(measured at 28+), so it can never be mistaken for a ramp level.
+
+The ridgeline shares **one y scale across all seven rows**. Normalising each row
+to its own maximum would make Saturday look as busy as Monday - the whole point
+is that it is not. Curves are smoothed with a gentle 3-tap kernel that wraps
+around midnight; a wider kernel would flatten the late-night spike.
 
 ### SVG constraints this respects
 
@@ -232,7 +250,7 @@ Almost always the private-contributions setting - see step 2. Compare
 **Composition is mostly grey**
 Same cause. That block is `restrictedContributionsCount`.
 
-**Hour-of-day looks thin**
+**The density looks thin**
 Check `sampling` in `data/contributions.json`. If `complete` is `false`, raise
 `MAX_HOUR_REPOS` in `fetch.py` - the cache means the extra cost is paid once.
 

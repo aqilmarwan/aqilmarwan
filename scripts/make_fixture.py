@@ -20,7 +20,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from fetch import derive, hour_stats  # noqa: E402
+from fetch import derive, density_stats  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 END = date(2026, 8, 11)
@@ -51,13 +51,20 @@ def build():
 
     metrics = derive(days)
 
-    hours = [0] * 24
-    shape = [3, 1, 0, 0, 0, 0, 1, 2, 5, 9, 14, 18,
-             22, 26, 24, 21, 19, 16, 12, 9, 11, 17, 28, 34]
-    scale = max(1, metrics["total"] // max(1, sum(shape)))
-    for h, weight in enumerate(shape):
-        hours[h] = weight * scale
-    hours[4] = hours[5] = 0                   # explicitly empty buckets
+    # weekday x hour density. Weekday 0 = Sunday, matching the GitHub calendar.
+    hour_shape = [3, 1, 0, 0, 0, 0, 1, 2, 5, 9, 14, 18,
+                  22, 26, 24, 21, 19, 16, 12, 9, 11, 17, 28, 34]
+    weekday_weight = {0: 0.15, 1: 1.00, 2: 0.62, 3: 0.55,
+                      4: 0.44, 5: 0.50, 6: 0.11}     # Sat/Sun near-dead
+    matrix = [[0] * 24 for _ in range(7)]
+    for wd in range(7):
+        for h, weight in enumerate(hour_shape):
+            base = weight * weekday_weight[wd]
+            jitter = rng.uniform(0.6, 1.4)
+            matrix[wd][h] = int(base * jitter)
+    for wd in range(7):                       # explicitly empty buckets
+        matrix[wd][4] = matrix[wd][5] = 0
+    matrix[1][14] = 41                        # an unmistakable densest cell
 
     total = metrics["total"]
     commits = int(total * 0.62)
@@ -74,9 +81,10 @@ def build():
         "window": {"days": days},
         "metrics": metrics,
         "composition": composition,
-        "hours": hour_stats(hours),
+        "density": density_stats(matrix),
         "sampling": {"repos_sampled": 25, "repos_available": 49,
-                     "commits_scanned": sum(hours), "complete": False},
+                     "commits_scanned": sum(map(sum, matrix)),
+                     "complete": False},
         "per_year": {},
         "all_time": total + 1200,
         "yoy_pct": -12.4,

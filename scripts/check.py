@@ -94,26 +94,32 @@ def main() -> int:
     print(f"\ntheme ({source.name})")
     for mode in ("light", "dark"):
         c = T.THEMES[mode]
-        ramp = c["ramp"]
-        ls = [oklab_L(h) for h in ramp]
-        deltas = [abs(ls[i + 1] - ls[i]) for i in range(len(ls) - 1)]
-        spread = max(deltas) - min(deltas)
 
-        check(f"{mode}: ramp lightness monotone",
-              ls == sorted(ls) or ls == sorted(ls, reverse=True),
-              f"L {' '.join(f'{v:.3f}' for v in ls)}")
-        check(f"{mode}: ramp steps perceptually even", spread < 0.02,
-              f"dL spread {spread:.4f}")
-        check(f"{mode}: every step >= 0.06 dL apart", min(deltas) >= 0.06,
-              f"min {min(deltas):.3f}")
-        check(f"{mode}: faintest step separates from surface",
-              contrast(ramp[0], c["surface"]) >= 2.0,
-              f"{contrast(ramp[0], c['surface']):.2f}:1")
-        # The accent is the one bold element; if it can be mistaken for an
-        # intensity step the whole "spend boldness once" idea collapses.
-        worst = min(delta_e(c["accent"], step) for step in ramp)
-        check(f"{mode}: accent never reads as a ramp step", worst >= 8.0,
-              f"worst dE {worst:.1f} (target >= 8)")
+        # "ramp" is the 5-step intensity scale; "ridge" the 7-step ordinal
+        # weekday scale. Both must hold the same guarantees.
+        for name in ("ramp", "ridge"):
+            ramp = c[name]
+            ls = [oklab_L(h) for h in ramp]
+            deltas = [abs(ls[i + 1] - ls[i]) for i in range(len(ls) - 1)]
+            faintest = min(ramp, key=lambda h: contrast(h, c["surface"]))
+
+            check(f"{mode}/{name}: lightness monotone",
+                  ls == sorted(ls) or ls == sorted(ls, reverse=True),
+                  f"L {' '.join(f'{v:.3f}' for v in ls)}")
+            check(f"{mode}/{name}: steps perceptually even",
+                  max(deltas) - min(deltas) < 0.02,
+                  f"dL spread {max(deltas) - min(deltas):.4f}")
+            check(f"{mode}/{name}: every step >= 0.06 dL apart",
+                  min(deltas) >= 0.06, f"min {min(deltas):.3f}")
+            check(f"{mode}/{name}: faintest step separates from surface",
+                  contrast(faintest, c["surface"]) >= 2.0,
+                  f"{contrast(faintest, c['surface']):.2f}:1")
+
+            # The accent is the one bold element; if it can be mistaken for a
+            # ramp step the whole "spend boldness once" idea collapses.
+            worst = min(delta_e(c["accent"], step) for step in ramp)
+            check(f"{mode}/{name}: accent never reads as a step", worst >= 8.0,
+                  f"worst dE {worst:.1f} (target >= 8)")
 
     print("\noutput")
     svgs = {mode: R.render(data, mode) for mode in ("light", "dark")}
@@ -145,8 +151,10 @@ def main() -> int:
                     "weekday_totals": [0] * 7, "rolling7": []},
         "composition": {"commits": 0, "pull_requests": 0, "issues": 0,
                         "reviews": 0, "private": 0},
-        "hours": {"histogram": [0] * 24, "total": 0, "peak_hour": None,
-                  "peak_block": None},
+        "density": {"matrix": [[0] * 24 for _ in range(7)],
+                    "histogram": [0] * 24, "weekday_totals": [0] * 7,
+                    "total": 0, "peak_hour": None, "peak_weekday": None,
+                    "peak_cell": None, "peak_block": None},
         "sampling": {"repos_sampled": 0, "repos_available": 0,
                      "commits_scanned": 0, "complete": True},
         "per_year": {}, "all_time": 0, "yoy_pct": None, "prior_365": 0,
