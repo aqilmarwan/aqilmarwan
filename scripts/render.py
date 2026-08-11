@@ -143,7 +143,6 @@ def build_density(d, c) -> str:
     out.append(f'<path d="{area}" fill="{c["ramp"][0]}" fill-opacity="0.55"/>')
 
     # one bar per day - the raw distribution, not a summary of it
-    peak_i = max(range(len(counts)), key=lambda i: counts[i])
     for i, count in enumerate(counts):
         if not count:
             continue
@@ -155,14 +154,6 @@ def build_density(d, c) -> str:
     out.append(f'<line x1="{f(T.DENSITY_X)}" y1="{f(base)}" '
                f'x2="{f(T.DENSITY_X + T.DENSITY_W)}" y2="{f(base)}" '
                f'class="rule"/>')
-
-    # The busiest day still gets a marker, but no value label - the dot says
-    # "this is the high point" without putting a number on the graphic.
-    if counts[peak_i]:
-        px = T.DENSITY_X + peak_i * step + max(step - T.BAR_GAP, T.BAR_MIN) / 2
-        py = y_of(counts[peak_i])
-        out.append(f'<circle cx="{f(px)}" cy="{f(py - 8)}" '
-                   f'r="{T.PEAK_DOT_R}" fill="{c["accent"]}"/>')
 
     # month ticks, one per calendar month start
     for i, day in enumerate(days):
