@@ -155,21 +155,23 @@ converted to sRGB. Even lightness spacing is what makes it survive deuteranopia
 `make check` re-verifies this from the hex values rather than taking it on
 trust.
 
-The amber accent appears in exactly one place: the marker on the busiest single
-day. It sits ≥ 8 OKLab ΔE from every ramp step (measured at 28), so it can
-never be mistaken for a ramp level.
+The **violet** accent appears in exactly one place: the dot marking the busiest
+single day. Violet rather than amber on purpose - beside a green ramp, an amber
+or red accent is the textbook red-green confusion, and a red-orange candidate
+measured only ΔE 3.7 against the ramp mid under simulated deuteranopia. Violet
+clears it at 24.3 deutan / 13.7 tritan, 32.8 unsimulated.
 
 The graphic is one density time series plus a composition bar. Every one of the
 trailing 365 days gets its own bar, so the plot carries the raw distribution
 rather than a summary of it; a 5-tap smoothed envelope sits behind the bars to
-give the trend a readable shape. The single busiest day is marked in the accent
-and labelled - with no y-axis, that label is the only scale reference, so it
-stays even though the stats strip is gone.
+give the trend a readable shape. The busiest single day carries an accent dot
+but no value label, so the plot shows shape without stating magnitudes - there
+is no y-axis either, by design.
 
-**"updated today" is day-granular on purpose.** An SVG served through Camo is
-static, so an hour-granular string ("updated 3 hours ago") would freeze at
+**"last updated: today" is day-granular on purpose.** An SVG served through Camo is
+static, so an hour-granular string ("3 hours ago") would freeze at
 build time and be wrong for the rest of the day. A day-granular one stays true
-for as long as the file is current, and correctly reads "updated 2 days ago" if
+for as long as the file is current, and correctly reads "2 days ago" if
 the workflow ever stops.
 
 ### SVG constraints this respects
