@@ -155,18 +155,12 @@ converted to sRGB. Even lightness spacing is what makes it survive deuteranopia
 `make check` re-verifies this from the hex values rather than taking it on
 trust.
 
-The **violet** accent appears in exactly one place: the dot marking the busiest
-single day. Violet rather than amber on purpose - beside a green ramp, an amber
-or red accent is the textbook red-green confusion, and a red-orange candidate
-measured only ΔE 3.7 against the ramp mid under simulated deuteranopia. Violet
-clears it at 24.3 deutan / 13.7 tritan, 32.8 unsimulated.
-
 The graphic is one density time series plus a composition bar. Every one of the
 trailing 365 days gets its own bar, so the plot carries the raw distribution
 rather than a summary of it; a 5-tap smoothed envelope sits behind the bars to
-give the trend a readable shape. The busiest single day carries an accent dot
-but no value label, so the plot shows shape without stating magnitudes - there
-is no y-axis either, by design.
+give the trend a readable shape. Nothing is annotated and there is no y-axis:
+the plot shows the shape of the year without stating any magnitude. The only
+numbers in the graphic are the composition counts.
 
 **"last updated: today" is day-granular on purpose.** An SVG served through Camo is
 static, so an hour-granular string ("3 hours ago") would freeze at
