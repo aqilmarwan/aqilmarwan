@@ -5,15 +5,10 @@ The ramp uses GitHub's contribution-green tone (OKLCH hue ~148) but re-spaced:
 GitHub's own steps jump unevenly in lightness (dL 0.14 / 0.10 / 0.15), this one
 is exactly even. Verified with the dataviz validator in both modes:
 
-  ramp   (--ordinal)   monotone L, adjacent dL >= 0.06, light end >= 2:1 vs surface
-  accent (--pairs all) CVD dE 24.3 deutan / 13.7 tritan against the ramp mid
+  ramp (--ordinal)   monotone L, adjacent dL >= 0.06, light end >= 2:1 vs surface
 
 Even dL is what makes the ramp survive deuteranopia: the steps stay ordered by
 lightness alone, so hue is never load-bearing.
-
-The accent is VIOLET, not amber. Beside a green ramp an amber or red accent is
-the textbook deuteranopia collision - red-orange measured dE 3.7 against the
-ramp mid, far under the 8 floor. Violet clears it at 24.3.
 """
 
 # --------------------------------------------------------------------------
@@ -27,7 +22,6 @@ LIGHT = {
     "ink":         "#211f27",
     "ink_soft":    "#6a676f",
     "ink_muted":   "#8d8b91",
-    "accent":      "#8e57d8",   # violet - peak marker ONLY, nowhere else
     "ramp": ["#46ca5b", "#18b044", "#00943a", "#007935", "#005f2d"],
 }
 
@@ -38,7 +32,6 @@ DARK = {
     "ink":         "#f7f6f9",
     "ink_soft":    "#b8b6bd",
     "ink_muted":   "#87858c",
-    "accent":      "#a06ce8",
     "ramp": ["#005215", "#007327", "#00963b", "#00ba56", "#26df77"],
 }
 
@@ -82,7 +75,7 @@ RADIUS = 2
 # Every one of the trailing 365 days gets its own bar, so the plot carries the
 # raw distribution rather than a summary of it. A 7-day envelope sits behind
 # the bars to give the trend a readable shape.
-DENSITY_Y = 36          # headroom for the peak dot
+DENSITY_Y = 36
 DENSITY_H = 150
 DENSITY_X = MARGIN
 DENSITY_W = CONTENT_W
@@ -90,7 +83,6 @@ BAR_GAP = 0.9                                  # keeps daily bars distinct
 BAR_MIN = 1.0
 ENVELOPE_SMOOTH = [1, 2, 3, 2, 1]              # gentle shape under the bars
 MONTH_AXIS_Y = 204
-PEAK_DOT_R = 3.2
 
 # --- composition, the second line -----------------------------------------
 COMP_Y = 232

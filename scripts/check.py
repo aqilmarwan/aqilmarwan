@@ -9,7 +9,6 @@ precision, the perceptual evenness of the ramp, and the empty states.
 from __future__ import annotations
 
 import json
-import math
 import re
 import sys
 import xml.dom.minidom
@@ -62,13 +61,6 @@ def oklab_L(hx: str) -> float:
     return oklab(hx)[0]
 
 
-def delta_e(a: str, b: str) -> float:
-    """Euclidean distance in OKLab x100 - the same units the dataviz
-    validator's CVD thresholds are expressed in."""
-    p, q = oklab(a), oklab(b)
-    return 100 * math.dist(p, q)
-
-
 def contrast(a: str, b: str) -> float:
     def lum(hx):
         hx = hx.lstrip("#")
@@ -114,12 +106,6 @@ def main() -> int:
             check(f"{mode}/{name}: faintest step separates from surface",
                   contrast(faintest, c["surface"]) >= 2.0,
                   f"{contrast(faintest, c['surface']):.2f}:1")
-
-            # The accent is the one bold element; if it can be mistaken for a
-            # ramp step the whole "spend boldness once" idea collapses.
-            worst = min(delta_e(c["accent"], step) for step in ramp)
-            check(f"{mode}/{name}: accent never reads as a step", worst >= 8.0,
-                  f"worst dE {worst:.1f} (target >= 8)")
 
     print("\noutput")
     svgs = {mode: R.render(data, mode) for mode in ("light", "dark")}
