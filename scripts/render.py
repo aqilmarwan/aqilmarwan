@@ -95,7 +95,7 @@ def text_w(body, size, mono=False):
 
 
 def relative_day(generated: str) -> str:
-    """'updated today' / 'yesterday' / 'N days ago'.
+    """'last updated: today' / 'yesterday' / 'N days ago'.
 
     Deliberately day-granular. An SVG served through Camo is static, so an
     hour-granular string would freeze at build time and be wrong for the rest
@@ -105,13 +105,13 @@ def relative_day(generated: str) -> str:
     try:
         gen = date.fromisoformat(generated)
     except (TypeError, ValueError):
-        return f"updated {generated}"
+        return f"last updated: {generated}"
     delta = (date.today() - gen).days
     if delta <= 0:
-        return "updated today"
+        return "last updated: today"
     if delta == 1:
-        return "updated yesterday"
-    return f"updated {delta} days ago"
+        return "last updated: yesterday"
+    return f"last updated: {delta} days ago"
 
 
 # ---------------------------------------------------------------------------
