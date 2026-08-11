@@ -68,9 +68,9 @@ Turning this on makes the type breakdown (commits / PRs / issues / reviews)
 reflect your real totals. Note that it also surfaces that activity on your
 public profile page - that is the trade.
 
-The weekday x hour density does **not** depend on this setting. Those timestamps
-come from enumerating repositories directly with the `repo` scope, so the
-ridgeline is accurate either way.
+The daily density plot does **not** depend on this setting - the contribution
+calendar already counts private activity in its totals. Only the composition
+breakdown is affected.
 
 ---
 
@@ -105,15 +105,17 @@ contribution year, and one for the preceding 365 days (year-over-year compares
 trailing-365 against the prior 365; comparing calendar years would pit a
 part-finished year against a whole one).
 
-**The weekday x hour density is the hard part.** The contribution calendar
+**Commit timestamps (collected, not currently drawn).** The contribution calendar
 carries no timestamps, so commit times come from
 `repository.defaultBranchRef.target.history(author: …)`, reading `committedDate`
 off each commit and converting to `Asia/Kuala_Lumpur`. Each commit lands in one
 of 168 (weekday, hour) buckets.
 
-Note this makes the density a count of **commits**, not of all contributions -
-a different and smaller number than the 365-day contribution total in the stats
-strip. The footer states the exact sample size.
+The current graphic does **not** draw this data - it plots the daily
+contribution calendar instead. The collection is kept because it accumulates
+month by month and cannot be back-filled cheaply later; a warm run scans zero
+commits, so the ongoing cost is a handful of API calls. Delete
+`collect_commit_density` and its cache if you want it gone.
 
 That is rate-limit sensitive, so:
 
@@ -147,25 +149,28 @@ slightly fewer. You are nowhere near the ceiling.
 `theme.py` holds every colour, size and spacing value; `render.py` contains no
 literal hex codes or bare pixel numbers.
 
-Two ramps, both generated in **OKLCH with exactly even lightness steps** and
-converted to sRGB:
+The 5-step ramp is generated in **OKLCH with exactly even lightness steps** and
+converted to sRGB. Even lightness spacing is what makes it survive deuteranopia
+- the steps stay ordered by lightness alone, so hue never carries the meaning.
+`make check` re-verifies this from the hex values rather than taking it on
+trust.
 
-- **`ramp`** - 5 steps, used for momentum and composition
-- **`ridge`** - 7 steps, one per weekday. Weekday is an *ordered* category
-  (Mon → Sun), so it takes an ordinal ramp rather than categorical hues.
+The amber accent appears in exactly one place: the marker on the busiest single
+day. It sits ≥ 8 OKLab ΔE from every ramp step (measured at 28), so it can
+never be mistaken for a ramp level.
 
-Even lightness spacing is what makes both survive deuteranopia - the steps stay
-ordered by lightness alone, so hue never carries the meaning. `make check`
-re-verifies this from the hex values rather than taking it on trust.
+The graphic is one density time series plus a composition bar. Every one of the
+trailing 365 days gets its own bar, so the plot carries the raw distribution
+rather than a summary of it; a 5-tap smoothed envelope sits behind the bars to
+give the trend a readable shape. The single busiest day is marked in the accent
+and labelled - with no y-axis, that label is the only scale reference, so it
+stays even though the stats strip is gone.
 
-The amber accent appears in exactly one place: the marker on the densest
-(weekday, hour) cell. It sits ≥ 8 OKLab ΔE from every step of both ramps
-(measured at 28+), so it can never be mistaken for a ramp level.
-
-The ridgeline shares **one y scale across all seven rows**. Normalising each row
-to its own maximum would make Saturday look as busy as Monday - the whole point
-is that it is not. Curves are smoothed with a gentle 3-tap kernel that wraps
-around midnight; a wider kernel would flatten the late-night spike.
+**"updated today" is day-granular on purpose.** An SVG served through Camo is
+static, so an hour-granular string ("updated 3 hours ago") would freeze at
+build time and be wrong for the rest of the day. A day-granular one stays true
+for as long as the file is current, and correctly reads "updated 2 days ago" if
+the workflow ever stops.
 
 ### SVG constraints this respects
 

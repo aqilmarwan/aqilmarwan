@@ -24,10 +24,6 @@ LIGHT = {
     "ink_muted":   "#8d8b91",
     "accent":      "#cc7200",   # amber - peak markers ONLY, nowhere else
     "ramp": ["#bda3ff", "#b47afd", "#a55edb", "#9541b9", "#842298"],
-    # Weekday is an ORDERED category (Mon -> Sun), so it takes an ordinal
-    # ramp rather than categorical hues. Index 0 = Monday.
-    "ridge": ["#6a0082", "#79239e", "#863db9", "#9455d3",
-              "#a16cee", "#ae86ff", "#baa5ff"],
 }
 
 DARK = {
@@ -39,8 +35,6 @@ DARK = {
     "ink_muted":   "#87858c",
     "accent":      "#d47a00",
     "ramp": ["#5926a2", "#7e44bf", "#a762dc", "#d17ff7", "#f3a8ff"],
-    "ridge": ["#ecb1ff", "#d992ff", "#be79f5", "#a266e2",
-              "#8752cf", "#6f3eba", "#5729a5"],
 }
 
 THEMES = {"light": LIGHT, "dark": DARK}
@@ -73,50 +67,43 @@ TYPE = {
 # geometry
 # --------------------------------------------------------------------------
 
-CANVAS = {"w": 900, "h": 620}
+CANVAS = {"w": 900, "h": 330}
 MARGIN = 32
 CONTENT_W = CANVAS["w"] - 2 * MARGIN          # 836
 
 RADIUS = 2
-HOURS = 24
-DAYS = 7
 
-# --- ridgeline (the hero) -------------------------------------------------
-# Seven density curves, one per weekday, sharing one y scale so the rows are
-# comparable. Curves are taller than the row pitch, so they overlap - that is
-# the joy-plot read, and each ridge carries a surface-coloured halo stroke so
-# the one behind stays legible.
-RIDGE_LABEL_W = 40                             # Mon/Tue/... gutter
-RIDGE_VALUE_W = 56                             # per-row totals, right aligned
-RIDGE_PITCH = 32                               # baseline-to-baseline
-RIDGE_HEIGHT = 52                              # curve height at the shared max
-RIDGE_TOP = 158                                # topmost possible curve apex
-RIDGE_X = MARGIN + RIDGE_LABEL_W
-RIDGE_W = CONTENT_W - RIDGE_LABEL_W - RIDGE_VALUE_W
-RIDGE_HALO = 3                                 # surface-coloured separation
-RIDGE_TOPLINE = 2
-RIDGE_SMOOTH = [1, 2, 1]                       # gentle, wraps around midnight
-HOUR_TICKS = (0, 6, 12, 18, 23)
-GRID_HOURS = (6, 12, 18)                       # hairlines behind the ridges
+# --- the density time series (the whole graphic) --------------------------
+# Every one of the trailing 365 days gets its own bar, so the plot carries the
+# raw distribution rather than a summary of it. A 7-day envelope sits behind
+# the bars to give the trend a readable shape.
+DENSITY_Y = 44          # headroom for the peak annotation
+DENSITY_H = 150
+DENSITY_X = MARGIN
+DENSITY_W = CONTENT_W
+BAR_GAP = 0.5                                  # keeps daily bars distinct
+BAR_MIN = 1.0
+ENVELOPE_SMOOTH = [1, 2, 3, 2, 1]              # gentle shape under the bars
+MONTH_AXIS_Y = 212
+PEAK_DOT_R = 3.2
 
-# --- bottom band: momentum (left) + composition (right) -------------------
-FOOT_GAP = 36
-FOOT_W = [548, 252]                            # 800 + 36 = 836
-LEGEND_COLS = 2
-LEGEND_ROW_H = 18
+# --- composition, the second line -----------------------------------------
+COMP_Y = 240
+COMP_H = 12
+COMP_LABEL_Y = 270
+SEG_GAP = 2            # surface gap between stacked composition segments
+SEG_MIN = 1.5          # a nonzero category never disappears entirely
+SWATCH = 8
+LEGEND_GAP = 20        # between one legend entry and the next
+
+# rough advance widths, used only to pack the inline legend deterministically
+CHAR_W_SANS = 0.54
+CHAR_W_MONO = 0.60
 
 BANDS = {
-    "header":    {"y": 26},
-    "stats":     {"y": 84},
-    "ridge":     {"y": RIDGE_TOP},
-    "hour_axis": {"y": 424},
-    "foot":      {"y": 456, "h": 104},
-    "footer":    {"y": 590},
+    "density": {"y": DENSITY_Y, "h": DENSITY_H},
+    "footer":  {"y": 298},
 }
 
 STROKE_HAIRLINE = 1
-STROKE_LINE = 2                                # momentum line
-
-STAT_VALUE_SIZE = 30
-SEG_GAP = 2            # surface gap between stacked composition segments
-SEG_MIN = 1.5          # a nonzero category never disappears entirely
+STROKE_LINE = 2

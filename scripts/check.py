@@ -95,9 +95,9 @@ def main() -> int:
     for mode in ("light", "dark"):
         c = T.THEMES[mode]
 
-        # "ramp" is the 5-step intensity scale; "ridge" the 7-step ordinal
-        # weekday scale. Both must hold the same guarantees.
-        for name in ("ramp", "ridge"):
+        # The 5-step intensity scale. Kept as a loop so a second ramp can be
+        # added back without restructuring the block.
+        for name in ("ramp",):
             ramp = c[name]
             ls = [oklab_L(h) for h in ramp]
             deltas = [abs(ls[i + 1] - ls[i]) for i in range(len(ls) - 1)]
