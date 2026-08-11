@@ -72,7 +72,7 @@ TYPE = {
 # geometry
 # --------------------------------------------------------------------------
 
-CANVAS = {"w": 900, "h": 330}
+CANVAS = {"w": 900, "h": 322}
 MARGIN = 32
 CONTENT_W = CANVAS["w"] - 2 * MARGIN          # 836
 
@@ -82,20 +82,20 @@ RADIUS = 2
 # Every one of the trailing 365 days gets its own bar, so the plot carries the
 # raw distribution rather than a summary of it. A 7-day envelope sits behind
 # the bars to give the trend a readable shape.
-DENSITY_Y = 44          # headroom for the peak annotation
+DENSITY_Y = 36          # headroom for the peak dot
 DENSITY_H = 150
 DENSITY_X = MARGIN
 DENSITY_W = CONTENT_W
 BAR_GAP = 0.9                                  # keeps daily bars distinct
 BAR_MIN = 1.0
 ENVELOPE_SMOOTH = [1, 2, 3, 2, 1]              # gentle shape under the bars
-MONTH_AXIS_Y = 212
+MONTH_AXIS_Y = 204
 PEAK_DOT_R = 3.2
 
 # --- composition, the second line -----------------------------------------
-COMP_Y = 240
+COMP_Y = 232
 COMP_H = 12
-COMP_LABEL_Y = 270
+COMP_LABEL_Y = 262
 SEG_GAP = 2            # surface gap between stacked composition segments
 SEG_MIN = 1.5          # a nonzero category never disappears entirely
 SWATCH = 8
@@ -107,7 +107,7 @@ CHAR_W_MONO = 0.60
 
 BANDS = {
     "density": {"y": DENSITY_Y, "h": DENSITY_H},
-    "footer":  {"y": 298},
+    "footer":  {"y": 290},
 }
 
 STROKE_HAIRLINE = 1
