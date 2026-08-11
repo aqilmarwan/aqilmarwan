@@ -64,38 +64,44 @@ def group(body: list[str], transform: str = "") -> str:
     return f"<g{t}>" + "".join(body) + "</g>"
 
 
-def nice_unit(peak: int, rows: int) -> int:
-    """Smallest 'nice' cell value keeping the tallest column within `rows`."""
-    for unit in T.NICE_UNITS:
-        if peak <= unit * rows:
-            return unit
-    return max(1, math.ceil(peak / rows))
+# ---------------------------------------------------------------------------
+# curve helpers
+# ---------------------------------------------------------------------------
+
+def smooth(values: list[float], kernel: list[int]) -> list[float]:
+    """Circular weighted smoothing - a day wraps, so 23:00 neighbours 00:00.
+
+    Deliberately gentle. A wide kernel would flatten the late-night spike that
+    is the most distinctive feature of the distribution.
+    """
+    n = len(values)
+    half = len(kernel) // 2
+    total = sum(kernel)
+    return [
+        sum(values[(i + k - half) % n] * w for k, w in enumerate(kernel)) / total
+        for i in range(n)
+    ]
 
 
-def thresholds(counts: list[int]) -> list[int]:
-    """Quantile cut points over ACTIVE days, so the ramp spends its steps where
-    the data actually is. A fixed linear scale would put ~95% of this account's
-    days in step 1 and waste four colours on the tail."""
-    active = sorted(c for c in counts if c > 0)
-    if not active:
-        return [1, 2, 3, 4]
-    cuts = []
-    for i in range(1, T.LEGEND_STEPS):
-        idx = min(len(active) - 1, int(len(active) * i / T.LEGEND_STEPS))
-        cuts.append(active[idx])
-    # keep strictly increasing so every step stays reachable
-    for i in range(1, len(cuts)):
-        cuts[i] = max(cuts[i], cuts[i - 1] + 1)
-    return cuts
+def spline(points: list[tuple[float, float]]) -> str:
+    """Catmull-Rom through the points, emitted as cubic beziers."""
+    if len(points) < 2:
+        return ""
+    out = [f"M{f(points[0][0])},{f(points[0][1])}"]
+    for i in range(len(points) - 1):
+        p0 = points[i - 1] if i else points[0]
+        p1, p2 = points[i], points[i + 1]
+        p3 = points[i + 2] if i + 2 < len(points) else p2
+        c1 = (p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6)
+        c2 = (p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6)
+        out.append(f"C{f(c1[0])},{f(c1[1])} {f(c2[0])},{f(c2[1])} "
+                   f"{f(p2[0])},{f(p2[1])}")
+    return " ".join(out)
 
 
-def level(count: int, cuts: list[int]) -> int:
-    if count <= 0:
-        return 0
-    for i, cut in enumerate(cuts):
-        if count < cut:
-            return i
-    return len(cuts)
+def hour_x(hour: float) -> float:
+    """Hour -> x, sampled at bin centres across the plot width."""
+    return T.RIDGE_X + (hour + 0.5) * T.RIDGE_W / T.HOURS
 
 
 # ---------------------------------------------------------------------------
@@ -103,9 +109,8 @@ def level(count: int, cuts: list[int]) -> int:
 # ---------------------------------------------------------------------------
 
 def build_header(d, c) -> str:
-    user = d["user"]
-    handle = user.get("login", "")
-    sub = (f"contribution distribution · trailing 365 days · "
+    handle = d["user"].get("login", "")
+    sub = (f"commit density by weekday and hour · trailing 365 days · "
            f"{d['timezone'].replace('_', ' ')}")
     return group([
         text(T.MARGIN, T.BANDS["header"]["y"] + 4, handle, "h1"),
@@ -115,15 +120,21 @@ def build_header(d, c) -> str:
 
 def build_stats(d, c) -> str:
     m = d["metrics"]
+    dn = d["density"]
     yoy = d.get("yoy_pct")
     yoy_txt = "-" if yoy is None else f"{'+' if yoy >= 0 else ''}{round(yoy):g}%"
+
+    peak = dn.get("peak_cell")
+    peak_txt = "-"
+    if peak:
+        peak_txt = f"{WEEKDAY_NAMES[peak['weekday']]} {peak['hour']:02d}"
 
     tiles = [
         (f"{m['total']:,}", "contributions"),
         (str(m["current_streak"]), "current streak"),
         (str(m["longest_streak"]), "longest streak"),
         (str(m["busiest_day"]["count"]), "busiest day"),
-        (f"{m['active_pct']:g}%", "of days active"),
+        (peak_txt, "densest hour"),
         (yoy_txt, "vs prior year"),
     ]
 
@@ -140,172 +151,128 @@ def build_stats(d, c) -> str:
     return group(out)
 
 
-def build_calendar(d, c, cuts) -> str:
-    days = d["window"]["days"]
-    if not days:
-        return ""
-    cal_x = T.MARGIN + T.DAY_LABEL_W
-    grid_y = T.BANDS["grid"]["y"]
-    offset = days[0]["weekday"]
+def build_ridgeline(d, c) -> str:
+    """Seven weekday density curves over the 24-hour day.
+
+    One shared y scale across all rows, so row heights are directly comparable -
+    per-row normalisation would make Saturday look as busy as Monday.
+    """
+    dn = d["density"]
+    matrix = dn.get("matrix") or [[0] * T.HOURS for _ in range(T.DAYS)]
+    order = [1, 2, 3, 4, 5, 6, 0]          # Monday first; GitHub indexes Sun=0
+    peak_cell = dn.get("peak_cell")
+
+    curves = [smooth([float(v) for v in matrix[wd]], T.RIDGE_SMOOTH)
+              for wd in order]
+    ceiling = max((max(c_) for c_ in curves), default=0.0) or 1.0
+
+    last_base = T.RIDGE_TOP + T.RIDGE_HEIGHT + (T.DAYS - 1) * T.RIDGE_PITCH
     out = []
 
-    # Month labels sit at the column holding that month's 1st. Keying off the
-    # 1st (rather than the first day seen) means the partial month the window
-    # opens in gets no label - otherwise the year reads as Aug ... Aug.
-    for i, day in enumerate(days):
-        _, mth, dom = day["date"].split("-")
-        if dom != "01":
-            continue
-        col = (i + offset) // 7
-        out.append(text(cal_x + col * T.PITCH,
-                        T.BANDS["months"]["y"], MONTH_NAMES[int(mth) - 1], "l"))
+    # structure first, behind the ridges
+    for h in T.GRID_HOURS:
+        out.append(f'<line x1="{f(hour_x(h))}" y1="{f(T.RIDGE_TOP - 6)}" '
+                   f'x2="{f(hour_x(h))}" y2="{f(last_base)}" class="rule"/>')
+    out.append(f'<line x1="{f(T.RIDGE_X)}" y1="{f(last_base)}" '
+               f'x2="{f(T.RIDGE_X + T.RIDGE_W)}" y2="{f(last_base)}" '
+               f'class="rule"/>')
 
-    # weekday labels - Mon/Wed/Fri only, per the brief
-    for row in (1, 3, 5):
-        out.append(text(cal_x - 8, grid_y + row * T.PITCH + T.CELL - 2,
-                        WEEKDAY_NAMES[row], "l", anchor="end"))
+    # Back to front: each ridge carries a surface-coloured halo, so the row
+    # behind stays readable where they overlap.
+    for row, wd in enumerate(order):
+        base = T.RIDGE_TOP + T.RIDGE_HEIGHT + row * T.RIDGE_PITCH
+        values = curves[row]
+        edge = (values[0] + values[-1]) / 2      # the day wraps at midnight
 
-    for i, day in enumerate(days):
-        slot = i + offset
-        col, row = slot // 7, slot % 7
-        lvl = level(day["count"], cuts)
-        fill = c["empty"] if lvl == 0 else c["ramp"][lvl - 1]
-        out.append(rect(cal_x + col * T.PITCH, grid_y + row * T.PITCH,
-                        T.CELL, T.CELL, fill))
+        def y_of(v):
+            return base - (v / ceiling) * T.RIDGE_HEIGHT
 
-    # Legend, right-aligned so "More" ends exactly on the content edge - the
-    # swatch run is inset by the reserved end-label widths rather than hung off
-    # the grid's right edge, which used to push "More" past the margin.
-    ly = T.BANDS["legend"]["y"]
-    right = T.MARGIN + T.CONTENT_W
-    swatches = T.LEGEND_STEPS + 1
-    lw = swatches * T.PITCH - T.GUTTER
-    sw_right = right - T.LEGEND_LABEL_W - T.LEGEND_LABEL_GAP
-    sw_left = sw_right - lw
-    baseline = ly + T.CELL - 2
+        pts = [(T.RIDGE_X, y_of(edge))]
+        pts += [(hour_x(h), y_of(v)) for h, v in enumerate(values)]
+        pts.append((T.RIDGE_X + T.RIDGE_W, y_of(edge)))
 
-    out.append(text(sw_left - T.LEGEND_LABEL_GAP, baseline, "Less", "l",
-                    anchor="end"))
-    for i in range(swatches):
-        fill = c["empty"] if i == 0 else c["ramp"][i - 1]
-        out.append(rect(sw_left + i * T.PITCH, ly, T.CELL, T.CELL, fill))
-    out.append(text(sw_right + T.LEGEND_LABEL_GAP, baseline, "More", "l"))
+        curve = spline(pts)
+        area = (f"{curve} L{f(T.RIDGE_X + T.RIDGE_W)},{f(base)} "
+                f"L{f(T.RIDGE_X)},{f(base)} Z")
+
+        out.append(f'<path d="{area}" fill="{c["ridge"][row]}" '
+                   f'stroke="{c["surface"]}" stroke-width="{T.RIDGE_HALO}" '
+                   f'stroke-linejoin="round"/>')
+        # Top line in the ridge's own colour: it vanishes into the fill where
+        # the curve is tall, and gives a quiet weekday like Saturday a visible
+        # trace where the fill would otherwise be a sliver. A neutral grey line
+        # here reads louder than the data it outlines.
+        out.append(f'<path d="{curve}" fill="none" stroke="{c["ridge"][row]}" '
+                   f'stroke-width="{T.RIDGE_TOPLINE}" stroke-linecap="round"/>')
+
+        out.append(text(T.MARGIN, base - 3, WEEKDAY_NAMES[wd], "l"))
+        out.append(text(T.MARGIN + T.CONTENT_W, base - 3,
+                        f"{dn['weekday_totals'][wd]:,}", "n", anchor="end"))
+
+        if peak_cell and peak_cell["weekday"] == wd and peak_cell["count"]:
+            px = hour_x(peak_cell["hour"])
+            py = y_of(values[peak_cell["hour"]])
+            out.append(f'<circle cx="{f(px)}" cy="{f(py)}" r="3.4" '
+                       f'fill="{c["accent"]}" stroke="{c["surface"]}" '
+                       f'stroke-width="1.6"/>')
+
+    # Ticks only. A trailing "hour of day" caption sat on top of the 23 tick,
+    # and the subtitle already names the axis.
+    for h in T.HOUR_TICKS:
+        out.append(text(hour_x(h), T.BANDS["hour_axis"]["y"], f"{h:02d}", "n",
+                        anchor="middle"))
+
+    if peak_cell and peak_cell["count"]:
+        label = (f"densest: {WEEKDAY_NAMES[peak_cell['weekday']]} "
+                 f"{peak_cell['hour']:02d}:00 · {peak_cell['count']} commits")
+        out.append(text(T.MARGIN + T.CONTENT_W, T.RIDGE_TOP - 12, label,
+                        "cap-accent", anchor="end"))
+    out.append(text(T.MARGIN, T.RIDGE_TOP - 12, "COMMIT DENSITY", "cap"))
     return group(out)
 
 
 def build_momentum(d, c) -> str:
     days = d["window"]["days"]
     roll = d["metrics"]["rolling7"]
+    band = T.BANDS["foot"]
+    x0, width = T.MARGIN, T.FOOT_W[0]
+    top = band["y"] + 20
+    base = band["y"] + band["h"] - 26
     if not days or not roll:
         return ""
-    cal_x = T.MARGIN + T.DAY_LABEL_W
-    offset = days[0]["weekday"]
-    band = T.BANDS["momentum"]
-    top, base = band["y"], band["y"] + band["h"]
+
     peak = max(roll) or 1
+    height = base - top
+    step = width / max(len(roll), 1)
+    pts = [(x0 + (i + 0.5) * step, base - (v / peak) * height)
+           for i, v in enumerate(roll)]
 
-    def px(i):
-        return cal_x + ((i + offset) / 7) * T.PITCH + T.CELL / 2
-
-    def py(v):
-        return base - (v / peak) * band["h"]
-
-    pts = [(px(i), py(v)) for i, v in enumerate(roll)]
     line = "M" + " L".join(f"{f(x)},{f(y)}" for x, y in pts)
     area = (f"M{f(pts[0][0])},{f(base)} L"
             + " L".join(f"{f(x)},{f(y)}" for x, y in pts)
             + f" L{f(pts[-1][0])},{f(base)} Z")
 
-    out = [
-        f'<line x1="{f(cal_x)}" y1="{f(base)}" x2="{f(cal_x + T.CAL_W)}" '
+    return group([
+        text(x0, band["y"] + 8, "MOMENTUM", "cap"),
+        text(x0 + width, band["y"] + 8,
+             f"7-day rolling average · peak {round(peak, 1):g}/day", "l",
+             anchor="end"),
+        f'<line x1="{f(x0)}" y1="{f(base)}" x2="{f(x0 + width)}" '
         f'y2="{f(base)}" class="rule"/>',
         f'<path d="{area}" fill="{c["ramp"][0]}" fill-opacity="0.30"/>',
         f'<path d="{line}" fill="none" stroke="{c["ramp"][3]}" '
         f'stroke-width="{T.STROKE_LINE}" stroke-linejoin="round" '
         f'stroke-linecap="round"/>',
-        # One label, left-aligned. A second right-anchored label here collided
-        # with the calendar legend, which shares this line.
-        text(cal_x, top - 4,
-             f"7-day rolling average · peak {round(peak, 1):g}/day", "l"),
-    ]
-    return group(out)
-
-
-def build_weekday(d, c) -> str:
-    totals = d["metrics"]["weekday_totals"]
-    x0 = T.MARGIN
-    band = T.BANDS["panels"]
-    width = T.PANEL_W[0]
-    label_w, value_w = 30, 34
-    bar_max = width - label_w - value_w - 12
-    peak = max(totals) or 1
-
-    out = [text(x0, band["y"] + 8, "BY WEEKDAY", "cap")]
-    # Monday-first reads better than GitHub's Sunday-first for a work pattern
-    order = [1, 2, 3, 4, 5, 6, 0]
-    for row, wd in enumerate(order):
-        y = band["y"] + 22 + row * 20
-        value = totals[wd]
-        w = (value / peak) * bar_max
-        out.append(text(x0, y + T.CELL - 2, WEEKDAY_NAMES[wd], "l"))
-        out.append(rect(x0 + label_w, y, max(w, 1.5), T.CELL, c["ramp"][3]))
-        out.append(text(x0 + width, y + T.CELL - 2, f"{value:,}", "n",
-                        anchor="end"))
-    return group(out)
-
-
-def build_hours(d, c) -> str:
-    """The signature view: 24 columns built from the same cell as the calendar."""
-    hours = d["hours"]
-    hist = hours["histogram"]
-    x0 = T.MARGIN + T.PANEL_W[0] + T.PANEL_GAP
-    band = T.BANDS["panels"]
-    baseline = band["y"] + band["h"] - 24        # bottom edge of the cells
-    peak_hour = hours.get("peak_hour")
-    unit = nice_unit(max(hist) if hist else 0, T.HOUR_FIELD_ROWS)
-
-    out = []
-    for h in range(T.HOUR_BUCKETS):
-        x = x0 + h * T.PITCH
-        count = hist[h] if h < len(hist) else 0
-        cells = math.ceil(count / unit) if count else 0
-        if cells == 0:
-            # empty bucket still gets a mark so the axis reads continuously
-            out.append(rect(x, baseline - T.CELL, T.CELL, T.CELL, c["empty"]))
-            continue
-        fill = c["accent"] if h == peak_hour else c["ramp"][2]
-        for row in range(cells):
-            y = baseline - (row + 1) * T.CELL - row * T.GUTTER
-            out.append(rect(x, y, T.CELL, T.CELL, fill))
-
-    for h in (0, 6, 12, 18):
-        out.append(text(x0 + h * T.PITCH + T.CELL / 2, baseline + 14,
-                        f"{h:02d}", "n", anchor="middle"))
-    out.append(text(x0 + 23 * T.PITCH + T.CELL / 2, baseline + 14, "23", "n",
-                    anchor="middle"))
-
-    # Title top-left, matching the other two panels. The peak annotation lives
-    # at the bottom: the tallest column reaches the top of the band, so a
-    # right-anchored label up there sits right on top of it.
-    out.append(text(x0, band["y"] + 8, "BY HOUR OF DAY", "cap"))
-
-    # The peak label is right-anchored so it lands directly under the accent
-    # column it names; the unit caption takes the left.
-    caption = f"1 square = {unit} commit" + ("s" if unit != 1 else "")
-    out.append(text(x0, baseline + 26, caption, "l"))
-
-    if peak_hour is not None:
-        peak_txt = f"Peak {peak_hour:02d}:00-{(peak_hour + 1) % 24:02d}:00"
-        out.append(text(x0 + T.HOUR_W, baseline + 26, peak_txt, "cap-accent",
-                        anchor="end"))
-    return group(out)
+        text(x0, base + 14, days[0]["date"][:7], "n"),
+        text(x0 + width, base + 14, days[-1]["date"][:7], "n", anchor="end"),
+    ])
 
 
 def build_composition(d, c) -> str:
     comp = d["composition"]
-    x0 = T.MARGIN + T.PANEL_W[0] + T.PANEL_GAP + T.PANEL_W[1] + T.PANEL_GAP
-    band = T.BANDS["panels"]
-    width = T.PANEL_W[2]
+    band = T.BANDS["foot"]
+    x0 = T.MARGIN + T.FOOT_W[0] + T.FOOT_GAP
+    width = T.FOOT_W[1]
 
     # Private activity is not a *kind* of work - it is a hole in the data, so
     # it wears the neutral empty token rather than a ramp step. When the
@@ -323,35 +290,39 @@ def build_composition(d, c) -> str:
 
     out = [text(x0, band["y"] + 8, "COMPOSITION", "cap")]
 
-    # one stacked bar, 2px surface gaps between segments
     bar_y = band["y"] + 20
     x = x0
     for i, (_, value, fill) in enumerate(rows):
         w = (value / total) * width
         if i == len(rows) - 1:
             w = max(0.0, x0 + width - x)          # absorb rounding drift
-        # 2px surface gap between segments, but a category worth 0.3% must
-        # still leave a visible mark rather than collapse to nothing.
-        out.append(rect(x, bar_y, max(w - T.SEG_GAP, T.SEG_MIN), T.CELL, fill))
+        out.append(rect(x, bar_y, max(w - T.SEG_GAP, T.SEG_MIN), 12, fill))
         x += w
 
+    # two columns, so five or six categories fit the band height
+    col_w = width / T.LEGEND_COLS
     for i, (label, value, fill) in enumerate(rows):
-        y = bar_y + 26 + i * 19
-        out.append(rect(x0, y, 8, 8, fill, r=1.5))
-        out.append(text(x0 + 14, y + 8, label, "l"))
-        out.append(text(x0 + width, y + 8, f"{value:,}", "n", anchor="end"))
+        col, row = divmod(i, (len(rows) + T.LEGEND_COLS - 1) // T.LEGEND_COLS)
+        cx = x0 + col * col_w
+        cy = bar_y + 28 + row * T.LEGEND_ROW_H
+        out.append(rect(cx, cy - 7, 8, 8, fill, r=1.5))
+        out.append(text(cx + 13, cy, label, "l"))
+        out.append(text(cx + col_w - 12, cy, f"{value:,}", "n", anchor="end"))
     return group(out)
 
 
 def build_footer(d, c) -> str:
     s = d.get("sampling", {})
+    n = d.get("density", {}).get("total", 0)
     bits = [f"Updated {d['generated']}",
             "generated from the GitHub GraphQL API"]
     if not s.get("complete", True):
-        bits.append(f"hours sampled from the {s.get('repos_sampled', 0)} "
-                    f"most active of {s.get('repos_available', 0)} repositories")
+        bits.append(f"density from {n:,} commit timestamps across the "
+                    f"{s.get('repos_sampled', 0)} most active of "
+                    f"{s.get('repos_available', 0)} repositories")
     else:
-        bits.append(f"hours from all {s.get('repos_sampled', 0)} repositories")
+        bits.append(f"density from {n:,} commit timestamps across all "
+                    f"{s.get('repos_sampled', 0)} repositories")
     return text(T.MARGIN, T.BANDS["footer"]["y"], " · ".join(bits), "l")
 
 
@@ -382,25 +353,40 @@ def stylesheet(c) -> str:
 
 def describe(d) -> str:
     m = d["metrics"]
-    h = d["hours"]
-    peak = h.get("peak_hour")
-    peak_txt = (f"Commits peak between {peak:02d}:00 and {(peak + 1) % 24:02d}:00 "
-                f"{d['timezone']} time. " if peak is not None else "")
-    busiest_wd = WEEKDAY_NAMES[m["weekday_totals"].index(max(m["weekday_totals"]))]
-    return (
-        f"{m['total']:,} contributions over the trailing 365 days, active on "
-        f"{m['active_days']} days ({m['active_pct']:g}% of the year). "
-        f"Current streak {m['current_streak']} days, longest {m['longest_streak']}. "
-        f"Busiest single day {m['busiest_day']['count']} contributions on "
-        f"{m['busiest_day']['date']}. Busiest weekday {busiest_wd}. {peak_txt}"
-        f"Median {m['median_active']:g} contributions per active day."
-    )
+    dn = d["density"]
+    bits = [
+        f"Commit density by weekday and hour of day, {d['timezone']} time, "
+        f"over the trailing 365 days.",
+        f"{m['total']:,} contributions, active on {m['active_days']} days "
+        f"({m['active_pct']:g}% of the year).",
+        f"Current streak {m['current_streak']} days, longest "
+        f"{m['longest_streak']}.",
+    ]
+    cell = dn.get("peak_cell")
+    if cell and cell["count"]:
+        bits.append(
+            f"The densest hour is {WEEKDAY_NAMES[cell['weekday']]} at "
+            f"{cell['hour']:02d}:00 with {cell['count']} commits."
+        )
+    if dn.get("peak_weekday") is not None:
+        totals = dn["weekday_totals"]
+        wd = dn["peak_weekday"]
+        quietest = min(range(7), key=lambda i: totals[i])
+        bits.append(
+            f"{WEEKDAY_NAMES[wd]} is the busiest weekday with {totals[wd]} "
+            f"commits; {WEEKDAY_NAMES[quietest]} the quietest with "
+            f"{totals[quietest]}."
+        )
+    if dn.get("peak_block"):
+        b = dn["peak_block"]
+        bits.append(f"The busiest four-hour block is {b['start']:02d}:00 to "
+                    f"{b['end']:02d}:00.")
+    return " ".join(bits)
 
 
 def render(d: dict, mode: str) -> str:
     c = T.THEMES[mode]
-    cuts = thresholds([day["count"] for day in d["window"]["days"]])
-    title = f"{d['user'].get('login', 'user')}'s contribution distribution"
+    title = f"{d['user'].get('login', 'user')}'s commit density distribution"
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" '
@@ -413,10 +399,8 @@ def render(d: dict, mode: str) -> str:
         rect(0, 0, T.CANVAS["w"], T.CANVAS["h"], c["surface"], r=0),
         build_header(d, c),
         build_stats(d, c),
-        build_calendar(d, c, cuts),
+        build_ridgeline(d, c),
         build_momentum(d, c),
-        build_weekday(d, c),
-        build_hours(d, c),
         build_composition(d, c),
         build_footer(d, c),
         "</svg>",

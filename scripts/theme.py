@@ -17,13 +17,17 @@ lightness alone, so hue is never load-bearing.
 
 LIGHT = {
     "surface":     "#fbfaf8",
-    "empty":       "#edecf0",   # a zero-contribution day
+    "empty":       "#edecf0",   # an empty bucket
     "hairline":    "#dfdde3",
     "ink":         "#211f27",
     "ink_soft":    "#6a676f",
     "ink_muted":   "#8d8b91",
     "accent":      "#cc7200",   # amber - peak markers ONLY, nowhere else
     "ramp": ["#bda3ff", "#b47afd", "#a55edb", "#9541b9", "#842298"],
+    # Weekday is an ORDERED category (Mon -> Sun), so it takes an ordinal
+    # ramp rather than categorical hues. Index 0 = Monday.
+    "ridge": ["#6a0082", "#79239e", "#863db9", "#9455d3",
+              "#a16cee", "#ae86ff", "#baa5ff"],
 }
 
 DARK = {
@@ -35,6 +39,8 @@ DARK = {
     "ink_muted":   "#87858c",
     "accent":      "#d47a00",
     "ramp": ["#5926a2", "#7e44bf", "#a762dc", "#d17ff7", "#f3a8ff"],
+    "ridge": ["#ecb1ff", "#d992ff", "#be79f5", "#a266e2",
+              "#8752cf", "#6f3eba", "#5729a5"],
 }
 
 THEMES = {"light": LIGHT, "dark": DARK}
@@ -67,52 +73,50 @@ TYPE = {
 # geometry
 # --------------------------------------------------------------------------
 
-CANVAS = {"w": 900, "h": 560}
+CANVAS = {"w": 900, "h": 620}
 MARGIN = 32
 CONTENT_W = CANVAS["w"] - 2 * MARGIN          # 836
 
-CELL = 12          # the atom - calendar day, hour-field unit, legend swatch
-GUTTER = 3
-PITCH = CELL + GUTTER                          # 15
 RADIUS = 2
+HOURS = 24
+DAYS = 7
 
-WEEKS = 53
-CAL_W = WEEKS * PITCH - GUTTER                 # 792
-DAY_LABEL_W = 26                               # gutter for Mon/Wed/Fri
+# --- ridgeline (the hero) -------------------------------------------------
+# Seven density curves, one per weekday, sharing one y scale so the rows are
+# comparable. Curves are taller than the row pitch, so they overlap - that is
+# the joy-plot read, and each ridge carries a surface-coloured halo stroke so
+# the one behind stays legible.
+RIDGE_LABEL_W = 40                             # Mon/Tue/... gutter
+RIDGE_VALUE_W = 56                             # per-row totals, right aligned
+RIDGE_PITCH = 32                               # baseline-to-baseline
+RIDGE_HEIGHT = 52                              # curve height at the shared max
+RIDGE_TOP = 158                                # topmost possible curve apex
+RIDGE_X = MARGIN + RIDGE_LABEL_W
+RIDGE_W = CONTENT_W - RIDGE_LABEL_W - RIDGE_VALUE_W
+RIDGE_HALO = 3                                 # surface-coloured separation
+RIDGE_TOPLINE = 2
+RIDGE_SMOOTH = [1, 2, 1]                       # gentle, wraps around midnight
+HOUR_TICKS = (0, 6, 12, 18, 23)
+GRID_HOURS = (6, 12, 18)                       # hairlines behind the ridges
 
-# The hour field is the signature view: 24 columns built from the *same* cell
-# and pitch as the calendar, so it reads as the same material. That is what
-# fixes the middle panel at 24 * PITCH - GUTTER = 357, and the other two
-# panels are sized around it.
-HOUR_W = HOUR_BUCKETS_W = 24 * PITCH - GUTTER  # 357
-
-PANEL_GAP = 28
-PANEL_W = [220, 360, 200]                      # 780 + 2*28 = 836 = CONTENT_W
+# --- bottom band: momentum (left) + composition (right) -------------------
+FOOT_GAP = 36
+FOOT_W = [548, 252]                            # 800 + 36 = 836
+LEGEND_COLS = 2
+LEGEND_ROW_H = 18
 
 BANDS = {
-    "header":   {"y": 26},
-    "stats":    {"y": 84},
-    "months":   {"y": 156},                    # month-label baseline
-    "grid":     {"y": 162},                    # heatmap top edge (7*15-3=102)
-    "legend":   {"y": 280},
-    "momentum": {"y": 292, "h": 40},
-    "panels":   {"y": 340, "h": 176},
-    "footer":   {"y": 538},
+    "header":    {"y": 26},
+    "stats":     {"y": 84},
+    "ridge":     {"y": RIDGE_TOP},
+    "hour_axis": {"y": 424},
+    "foot":      {"y": 456, "h": 104},
+    "footer":    {"y": 590},
 }
 
 STROKE_HAIRLINE = 1
 STROKE_LINE = 2                                # momentum line
 
-# The hour field quantises into cells. Pick the smallest "nice" unit that keeps
-# the tallest column within HOUR_FIELD_ROWS, so the caption reads sensibly
-# ("1 square = 10 commits") instead of "1 square = 11 commits".
-HOUR_FIELD_ROWS = 10
-HOUR_BUCKETS = 24
-NICE_UNITS = [1, 2, 5, 10, 15, 20, 25, 50, 100, 200, 500]
-
 STAT_VALUE_SIZE = 30
-LEGEND_STEPS = 5
-LEGEND_LABEL_W = 30    # reserved width for the "Less"/"More" end labels
-LEGEND_LABEL_GAP = 8
 SEG_GAP = 2            # surface gap between stacked composition segments
 SEG_MIN = 1.5          # a nonzero category never disappears entirely
