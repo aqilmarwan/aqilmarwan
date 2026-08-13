@@ -22,5 +22,13 @@
     "date": "2026-08-13",
     "longest_streak": 12,
     "total_365": 837
+  },
+  {
+    "active_days": 137,
+    "all_time": 1295,
+    "current_streak": 11,
+    "date": "2026-08-14",
+    "longest_streak": 12,
+    "total_365": 847
   }
 ]
