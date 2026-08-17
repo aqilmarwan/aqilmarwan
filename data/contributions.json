@@ -1,11 +1,11 @@
 {
-  "all_time": 1308,
+  "all_time": 1330,
   "composition": {
-    "commits": 770,
-    "issues": 1,
-    "other": 36,
+    "commits": 787,
+    "issues": 2,
+    "other": 38,
     "private": 1,
-    "pull_requests": 52,
+    "pull_requests": 54,
     "reviews": 0
   },
   "density": {
@@ -23,14 +23,14 @@
       14,
       33,
       68,
-      68,
+      72,
       78,
       79,
       60,
       59,
       58,
       37,
-      20,
+      33,
       24,
       42,
       92
@@ -76,14 +76,14 @@
         5,
         15,
         24,
-        25,
+        29,
         33,
         25,
         30,
         16,
         11,
         1,
-        5,
+        18,
         14,
         0,
         8
@@ -220,7 +220,7 @@
       ]
     ],
     "peak_block": {
-      "count": 293,
+      "count": 297,
       "end": 16,
       "start": 12
     },
@@ -231,10 +231,10 @@
     },
     "peak_hour": 23,
     "peak_weekday": 1,
-    "total": 769,
+    "total": 786,
     "weekday_totals": [
       34,
-      221,
+      238,
       162,
       115,
       99,
@@ -242,19 +242,19 @@
       28
     ]
   },
-  "generated": "2026-08-17",
+  "generated": "2026-08-18",
   "metrics": {
-    "active_days": 139,
-    "active_pct": 38.1,
+    "active_days": 141,
+    "active_pct": 38.5,
     "busiest_day": {
       "count": 48,
       "date": "2026-06-08"
     },
-    "current_streak": 13,
-    "days_tracked": 365,
+    "current_streak": 15,
+    "days_tracked": 366,
     "longest_gap": 69,
-    "longest_streak": 13,
-    "mean_active": 6.19,
+    "longest_streak": 15,
+    "mean_active": 6.26,
     "median_active": 3,
     "rolling7": [
       0.0,
@@ -621,12 +621,13 @@
       11.0,
       12.43,
       12.43,
-      11.14
+      12.86,
+      12.86
     ],
-    "total": 860,
+    "total": 882,
     "weekday_totals": [
-      38,
-      247,
+      50,
+      257,
       180,
       126,
       106,
@@ -666,14 +667,14 @@
       "total": 302
     },
     "2026": {
-      "commits": 628,
+      "commits": 645,
       "restricted": 1,
-      "total": 710
+      "total": 732
     }
   },
   "prior_365": 165,
   "sampling": {
-    "commits_scanned": 0,
+    "commits_scanned": 17,
     "complete": false,
     "repos_available": 51,
     "repos_sampled": 25
@@ -2508,11 +2509,16 @@
         "weekday": 6
       },
       {
-        "count": 0,
+        "count": 12,
         "date": "2026-08-16",
         "weekday": 0
+      },
+      {
+        "count": 10,
+        "date": "2026-08-17",
+        "weekday": 1
       }
     ]
   },
-  "yoy_pct": 421.2
+  "yoy_pct": 434.5
 }
