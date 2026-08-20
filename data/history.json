@@ -78,5 +78,13 @@
     "date": "2026-08-20",
     "longest_streak": 17,
     "total_365": 980
+  },
+  {
+    "active_days": 144,
+    "all_time": 1429,
+    "current_streak": 18,
+    "date": "2026-08-21",
+    "longest_streak": 18,
+    "total_365": 981
   }
 ]
