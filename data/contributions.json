@@ -242,7 +242,7 @@
       28
     ]
   },
-  "generated": "2026-08-21",
+  "generated": "2026-08-22",
   "metrics": {
     "active_days": 144,
     "active_pct": 39.3,
@@ -252,12 +252,11 @@
     },
     "current_streak": 18,
     "days_tracked": 366,
-    "longest_gap": 66,
+    "longest_gap": 65,
     "longest_streak": 18,
     "mean_active": 6.81,
     "median_active": 3.0,
     "rolling7": [
-      0.0,
       0.0,
       0.0,
       0.0,
@@ -622,7 +621,8 @@
       12.86,
       19.57,
       20.43,
-      19.14
+      19.14,
+      17.43
     ],
     "total": 981,
     "weekday_totals": [
@@ -688,11 +688,6 @@
   },
   "window": {
     "days": [
-      {
-        "count": 0,
-        "date": "2025-08-20",
-        "weekday": 3
-      },
       {
         "count": 0,
         "date": "2025-08-21",
@@ -2517,6 +2512,11 @@
         "count": 1,
         "date": "2026-08-20",
         "weekday": 4
+      },
+      {
+        "count": 0,
+        "date": "2026-08-21",
+        "weekday": 5
       }
     ]
   },
