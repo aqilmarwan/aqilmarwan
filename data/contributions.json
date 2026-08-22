@@ -1,9 +1,9 @@
 {
-  "all_time": 1429,
+  "all_time": 1436,
   "composition": {
-    "commits": 885,
+    "commits": 891,
     "issues": 2,
-    "other": 39,
+    "other": 40,
     "private": 1,
     "pull_requests": 54,
     "reviews": 0
@@ -24,8 +24,8 @@
       39,
       75,
       75,
+      89,
       84,
-      83,
       65,
       60,
       59,
@@ -207,8 +207,8 @@
         0,
         0,
         1,
-        0,
-        6,
+        5,
+        7,
         0,
         2,
         0,
@@ -220,7 +220,7 @@
       ]
     ],
     "peak_block": {
-      "count": 317,
+      "count": 323,
       "end": 16,
       "start": 12
     },
@@ -231,7 +231,7 @@
     },
     "peak_hour": 23,
     "peak_weekday": 1,
-    "total": 837,
+    "total": 843,
     "weekday_totals": [
       34,
       238,
@@ -239,25 +239,24 @@
       121,
       99,
       110,
-      28
+      34
     ]
   },
-  "generated": "2026-08-22",
+  "generated": "2026-08-23",
   "metrics": {
-    "active_days": 144,
-    "active_pct": 39.3,
+    "active_days": 145,
+    "active_pct": 39.6,
     "busiest_day": {
       "count": 91,
       "date": "2026-08-18"
     },
-    "current_streak": 18,
+    "current_streak": 1,
     "days_tracked": 366,
-    "longest_gap": 65,
+    "longest_gap": 64,
     "longest_streak": 18,
     "mean_active": 6.81,
-    "median_active": 3.0,
+    "median_active": 3,
     "rolling7": [
-      0.0,
       0.0,
       0.0,
       0.0,
@@ -622,9 +621,10 @@
       19.57,
       20.43,
       19.14,
-      17.43
+      17.43,
+      18.29
     ],
-    "total": 981,
+    "total": 988,
     "weekday_totals": [
       50,
       257,
@@ -632,7 +632,7 @@
       133,
       107,
       131,
-      32
+      39
     ]
   },
   "per_year": {
@@ -667,16 +667,16 @@
       "total": 302
     },
     "2026": {
-      "commits": 743,
+      "commits": 749,
       "restricted": 1,
-      "total": 831
+      "total": 838
     }
   },
   "prior_365": 165,
   "sampling": {
-    "commits_scanned": 0,
+    "commits_scanned": 6,
     "complete": false,
-    "repos_available": 52,
+    "repos_available": 53,
     "repos_sampled": 25
   },
   "schema": 1,
@@ -688,11 +688,6 @@
   },
   "window": {
     "days": [
-      {
-        "count": 0,
-        "date": "2025-08-21",
-        "weekday": 4
-      },
       {
         "count": 0,
         "date": "2025-08-22",
@@ -2517,8 +2512,13 @@
         "count": 0,
         "date": "2026-08-21",
         "weekday": 5
+      },
+      {
+        "count": 7,
+        "date": "2026-08-22",
+        "weekday": 6
       }
     ]
   },
-  "yoy_pct": 494.5
+  "yoy_pct": 498.8
 }
