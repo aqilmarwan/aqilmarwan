@@ -242,7 +242,7 @@
       34
     ]
   },
-  "generated": "2026-08-29",
+  "generated": "2026-08-30",
   "metrics": {
     "active_days": 150,
     "active_pct": 41.0,
@@ -674,7 +674,7 @@
   },
   "prior_365": 165,
   "sampling": {
-    "commits_scanned": 1,
+    "commits_scanned": 0,
     "complete": false,
     "repos_available": 53,
     "repos_sampled": 25
