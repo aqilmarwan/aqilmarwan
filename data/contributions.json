@@ -1,7 +1,7 @@
 {
-  "all_time": 1557,
+  "all_time": 1607,
   "composition": {
-    "commits": 995,
+    "commits": 1045,
     "issues": 2,
     "other": 41,
     "private": 1,
@@ -20,19 +20,19 @@
       0,
       6,
       8,
-      22,
-      44,
-      77,
-      77,
-      100,
-      84,
-      67,
-      75,
+      23,
+      48,
+      81,
+      82,
+      102,
+      87,
+      70,
+      80,
       59,
       41,
-      36,
-      49,
-      57,
+      38,
+      50,
+      59,
       96
     ],
     "matrix": [
@@ -110,8 +110,8 @@
         14,
         16,
         7,
-        3,
         4,
+        6,
         23
       ],
       [
@@ -125,17 +125,17 @@
         0,
         0,
         6,
-        1,
-        9,
-        10,
-        10,
-        13,
-        5,
-        7,
         2,
+        13,
+        14,
+        15,
+        15,
+        8,
+        10,
+        7,
         12,
         11,
-        5,
+        7,
         5,
         17,
         6
@@ -220,7 +220,7 @@
       ]
     ],
     "peak_block": {
-      "count": 338,
+      "count": 352,
       "end": 16,
       "start": 12
     },
@@ -231,33 +231,32 @@
     },
     "peak_hour": 14,
     "peak_weekday": 1,
-    "total": 959,
+    "total": 991,
     "weekday_totals": [
       59,
       269,
-      215,
-      132,
+      218,
+      161,
       103,
       140,
       41
     ]
   },
-  "generated": "2026-09-09",
+  "generated": "2026-09-10",
   "metrics": {
-    "active_days": 159,
-    "active_pct": 43.4,
+    "active_days": 160,
+    "active_pct": 43.7,
     "busiest_day": {
       "count": 91,
       "date": "2026-08-18"
     },
-    "current_streak": 9,
+    "current_streak": 10,
     "days_tracked": 366,
-    "longest_gap": 47,
+    "longest_gap": 46,
     "longest_streak": 20,
-    "mean_active": 6.97,
-    "median_active": 3,
+    "mean_active": 7.24,
+    "median_active": 3.0,
     "rolling7": [
-      0.0,
       0.0,
       0.0,
       0.0,
@@ -622,14 +621,15 @@
       8.0,
       11.0,
       12.71,
-      13.71
+      16.71,
+      19.71
     ],
-    "total": 1109,
+    "total": 1159,
     "weekday_totals": [
       71,
       286,
-      283,
-      144,
+      304,
+      173,
       111,
       162,
       52
@@ -667,14 +667,14 @@
       "total": 302
     },
     "2026": {
-      "commits": 853,
+      "commits": 903,
       "restricted": 1,
-      "total": 959
+      "total": 1009
     }
   },
   "prior_365": 165,
   "sampling": {
-    "commits_scanned": 3,
+    "commits_scanned": 32,
     "complete": false,
     "repos_available": 54,
     "repos_sampled": 25
@@ -688,11 +688,6 @@
   },
   "window": {
     "days": [
-      {
-        "count": 0,
-        "date": "2025-09-08",
-        "weekday": 1
-      },
       {
         "count": 0,
         "date": "2025-09-09",
@@ -2514,11 +2509,16 @@
         "weekday": 1
       },
       {
-        "count": 8,
+        "count": 29,
         "date": "2026-09-08",
         "weekday": 2
+      },
+      {
+        "count": 29,
+        "date": "2026-09-09",
+        "weekday": 3
       }
     ]
   },
-  "yoy_pct": 572.1
+  "yoy_pct": 602.4
 }
