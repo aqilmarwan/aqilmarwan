@@ -242,23 +242,21 @@
       43
     ]
   },
-  "generated": "2026-09-27",
+  "generated": "2026-09-28",
   "metrics": {
     "active_days": 171,
-    "active_pct": 46.7,
+    "active_pct": 46.8,
     "busiest_day": {
       "count": 91,
       "date": "2026-08-18"
     },
     "current_streak": 3,
-    "days_tracked": 366,
+    "days_tracked": 365,
     "longest_gap": 30,
     "longest_streak": 20,
     "mean_active": 7.01,
     "median_active": 3,
     "rolling7": [
-      0.0,
-      0.0,
       0.0,
       0.0,
       0.0,
@@ -622,6 +620,7 @@
       1.14,
       1.43,
       3.0,
+      3.14,
       3.14
     ],
     "total": 1198,
@@ -674,7 +673,7 @@
   },
   "prior_365": 165,
   "sampling": {
-    "commits_scanned": 1,
+    "commits_scanned": 0,
     "complete": false,
     "repos_available": 56,
     "repos_sampled": 25
@@ -688,16 +687,6 @@
   },
   "window": {
     "days": [
-      {
-        "count": 0,
-        "date": "2025-09-26",
-        "weekday": 5
-      },
-      {
-        "count": 0,
-        "date": "2025-09-27",
-        "weekday": 6
-      },
       {
         "count": 0,
         "date": "2025-09-28",
@@ -2517,6 +2506,11 @@
         "count": 1,
         "date": "2026-09-26",
         "weekday": 6
+      },
+      {
+        "count": 0,
+        "date": "2026-09-27",
+        "weekday": 0
       }
     ]
   },
