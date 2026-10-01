@@ -242,7 +242,7 @@
       43
     ]
   },
-  "generated": "2026-10-01",
+  "generated": "2026-10-02",
   "metrics": {
     "active_days": 174,
     "active_pct": 47.5,
@@ -257,7 +257,6 @@
     "mean_active": 6.94,
     "median_active": 3.0,
     "rolling7": [
-      0.0,
       0.0,
       0.0,
       0.0,
@@ -622,7 +621,8 @@
       3.14,
       3.29,
       2.43,
-      3.29
+      3.29,
+      3.0
     ],
     "total": 1207,
     "weekday_totals": [
@@ -674,7 +674,7 @@
   },
   "prior_365": 165,
   "sampling": {
-    "commits_scanned": 5,
+    "commits_scanned": 0,
     "complete": false,
     "repos_available": 58,
     "repos_sampled": 25
@@ -688,11 +688,6 @@
   },
   "window": {
     "days": [
-      {
-        "count": 0,
-        "date": "2025-09-30",
-        "weekday": 2
-      },
       {
         "count": 0,
         "date": "2025-10-01",
@@ -2517,6 +2512,11 @@
         "count": 6,
         "date": "2026-09-30",
         "weekday": 3
+      },
+      {
+        "count": 0,
+        "date": "2026-10-01",
+        "weekday": 4
       }
     ]
   },
