@@ -1,7 +1,7 @@
 {
-  "all_time": 1666,
+  "all_time": 1667,
   "composition": {
-    "commits": 1096,
+    "commits": 1097,
     "issues": 2,
     "other": 46,
     "private": 1,
@@ -33,7 +33,7 @@
       38,
       53,
       65,
-      107
+      108
     ],
     "matrix": [
       [
@@ -164,7 +164,7 @@
         2,
         3,
         9,
-        12
+        13
       ],
       [
         3,
@@ -231,33 +231,32 @@
     },
     "peak_hour": 23,
     "peak_weekday": 1,
-    "total": 1042,
+    "total": 1043,
     "weekday_totals": [
       65,
       274,
       228,
       172,
-      106,
+      107,
       153,
       44
     ]
   },
-  "generated": "2026-10-08",
+  "generated": "2026-10-09",
   "metrics": {
-    "active_days": 180,
-    "active_pct": 49.2,
+    "active_days": 181,
+    "active_pct": 49.5,
     "busiest_day": {
       "count": 91,
       "date": "2026-08-18"
     },
-    "current_streak": 6,
+    "current_streak": 7,
     "days_tracked": 366,
     "longest_gap": 30,
     "longest_streak": 20,
-    "mean_active": 6.77,
-    "median_active": 3.0,
+    "mean_active": 6.73,
+    "median_active": 3,
     "rolling7": [
-      0.0,
       0.0,
       0.0,
       0.0,
@@ -622,15 +621,16 @@
       1.71,
       1.71,
       1.86,
-      1.57
+      1.57,
+      1.71
     ],
-    "total": 1218,
+    "total": 1219,
     "weekday_totals": [
       78,
       291,
       318,
       187,
-      114,
+      115,
       175,
       55
     ]
@@ -667,14 +667,14 @@
       "total": 302
     },
     "2026": {
-      "commits": 954,
+      "commits": 955,
       "restricted": 1,
-      "total": 1068
+      "total": 1069
     }
   },
   "prior_365": 165,
   "sampling": {
-    "commits_scanned": 5,
+    "commits_scanned": 1,
     "complete": false,
     "repos_available": 59,
     "repos_sampled": 25
@@ -688,11 +688,6 @@
   },
   "window": {
     "days": [
-      {
-        "count": 0,
-        "date": "2025-10-07",
-        "weekday": 2
-      },
       {
         "count": 0,
         "date": "2025-10-08",
@@ -2517,8 +2512,13 @@
         "count": 4,
         "date": "2026-10-07",
         "weekday": 3
+      },
+      {
+        "count": 1,
+        "date": "2026-10-08",
+        "weekday": 4
       }
     ]
   },
-  "yoy_pct": 638.2
+  "yoy_pct": 638.8
 }
