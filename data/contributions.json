@@ -1,7 +1,7 @@
 {
   "all_time": 1997,
   "composition": {
-    "commits": 1386,
+    "commits": 1350,
     "issues": 2,
     "other": 46,
     "private": 1,
@@ -242,10 +242,10 @@
       74
     ]
   },
-  "generated": "2026-10-28",
+  "generated": "2026-10-29",
   "metrics": {
-    "active_days": 194,
-    "active_pct": 53.0,
+    "active_days": 193,
+    "active_pct": 52.7,
     "busiest_day": {
       "count": 91,
       "date": "2026-08-18"
@@ -254,16 +254,15 @@
     "days_tracked": 366,
     "longest_gap": 30,
     "longest_streak": 20,
-    "mean_active": 7.92,
-    "median_active": 3.0,
+    "mean_active": 7.77,
+    "median_active": 3,
     "rolling7": [
-      36.0,
-      28.0,
-      22.67,
-      18.25,
-      20.8,
-      18.17,
-      15.71,
+      20.0,
+      16.0,
+      12.33,
+      17.0,
+      14.6,
+      12.33,
       10.57,
       7.71,
       6.0,
@@ -622,12 +621,13 @@
       22.57,
       20.14,
       17.29,
-      7.86
+      7.86,
+      7.43
     ],
-    "total": 1536,
+    "total": 1500,
     "weekday_totals": [
       90,
-      379,
+      343,
       466,
       195,
       120,
@@ -672,9 +672,9 @@
       "total": 1399
     }
   },
-  "prior_365": 214,
+  "prior_365": 234,
   "sampling": {
-    "commits_scanned": 28,
+    "commits_scanned": 0,
     "complete": false,
     "repos_available": 60,
     "repos_sampled": 25
@@ -688,11 +688,6 @@
   },
   "window": {
     "days": [
-      {
-        "count": 36,
-        "date": "2025-10-27",
-        "weekday": 1
-      },
       {
         "count": 20,
         "date": "2025-10-28",
@@ -2517,8 +2512,13 @@
         "count": 18,
         "date": "2026-10-27",
         "weekday": 2
+      },
+      {
+        "count": 0,
+        "date": "2026-10-28",
+        "weekday": 3
       }
     ]
   },
-  "yoy_pct": 617.8
+  "yoy_pct": 541.0
 }
