@@ -242,7 +242,7 @@
       70
     ]
   },
-  "generated": "2026-11-06",
+  "generated": "2026-11-07",
   "metrics": {
     "active_days": 188,
     "active_pct": 51.4,
@@ -257,7 +257,6 @@
     "mean_active": 7.59,
     "median_active": 3.0,
     "rolling7": [
-      0.0,
       0.0,
       0.0,
       0.0,
@@ -622,7 +621,8 @@
       2.71,
       0.14,
       0.14,
-      0.14
+      0.14,
+      0.0
     ],
     "total": 1427,
     "weekday_totals": [
@@ -688,11 +688,6 @@
   },
   "window": {
     "days": [
-      {
-        "count": 0,
-        "date": "2025-11-05",
-        "weekday": 3
-      },
       {
         "count": 0,
         "date": "2025-11-06",
@@ -2517,6 +2512,11 @@
         "count": 0,
         "date": "2026-11-05",
         "weekday": 4
+      },
+      {
+        "count": 0,
+        "date": "2026-11-06",
+        "weekday": 5
       }
     ]
   },
